@@ -1,0 +1,7 @@
+streamlit
+pandas
+scikit-learn
+scipy
+requests
+deep-translator
+gdown
