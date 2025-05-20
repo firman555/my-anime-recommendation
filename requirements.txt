@@ -1,7 +1,7 @@
 streamlit
 pandas
+gdown
 scikit-learn
 scipy
 requests
 deep-translator
-gdown
