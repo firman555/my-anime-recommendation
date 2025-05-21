@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import os
@@ -21,6 +20,21 @@ AVAILABLE_GENRES = [
     "Action", "Adventure", "Comedy", "Drama", "Fantasy", "Horror", "Mystery",
     "Romance", "Sci-Fi", "Slice of Life", "Supernatural", "Sports", "Thriller"
 ]
+
+# ================================
+# HELPER UNTUK GAMBAR
+# ================================
+def tampilkan_gambar_anime(image_url, caption):
+    st.markdown(
+        f"""
+        <div style='text-align: center;'>
+            <img src='{image_url if image_url else "https://via.placeholder.com/200x300?text=No+Image"}'
+                 style='height: 300px; object-fit: cover; border-radius: 10px;'>
+            <p style='margin-top: 6px; font-weight: bold;'>{caption}</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 # ================================
 # DOWNLOAD DATA
@@ -127,7 +141,7 @@ for i, row in enumerate(top5_df.itertuples()):
     with cols[i]:
         anime_id = anime_id_map.get(row.name)
         image_url, _, _, type_, episodes = get_anime_details_cached(anime_id) if anime_id else ("", "", "-", "-", "?")
-        st.image(image_url if image_url else "https://via.placeholder.com/200x300?text=No+Image", caption=row.name, use_container_width=True)
+        tampilkan_gambar_anime(image_url, row.name)
         st.markdown(f"⭐ **Rating:** `{row.avg_rating:.2f}`")
         st.markdown(f"👥 **Jumlah Rating:** `{row.num_ratings}`")
         st.markdown(f"🎮 **Tipe:** `{type_}`")
@@ -163,7 +177,7 @@ if st.button("🌟 Tampilkan Anime Genre Ini"):
             with col:
                 name = anime[anime['anime_id'] == anime_id]['name'].values[0]
                 image_url, _, _, type_, episodes = get_anime_details_cached(anime_id)
-                st.image(image_url if image_url else "https://via.placeholder.com/200x300?text=No+Image", caption=name, use_container_width=True)
+                tampilkan_gambar_anime(image_url, name)
                 st.markdown(f"⭐ Rating: `{rating:.2f}`")
                 st.markdown(f"👥 Jumlah Rating: `{num_votes}`")
                 st.markdown(f"🎮 Tipe: `{type_}`")
@@ -183,17 +197,17 @@ if "history" not in st.session_state:
 
 if st.button("🔍 Tampilkan Rekomendasi"):
     st.session_state.history.append(selected_anime)
-    rekomendasi = get_recommendations(selected_anime, matrix, model, n=10)  # Ubah jumlah rekomendasi jadi 10
+    rekomendasi = get_recommendations(selected_anime, matrix, model, n=10)
 
     st.subheader(f"✨ Rekomendasi berdasarkan: {selected_anime}")
-    col_rows = [st.columns(5), st.columns(5)]  # Dua baris, masing-masing 5 kolom
+    col_rows = [st.columns(5), st.columns(5)]
     for i, (rec_title, similarity) in enumerate(rekomendasi):
         row = 0 if i < 5 else 1
         col = col_rows[row][i % 5]
         with col:
             anime_id = anime_id_map.get(rec_title)
             image_url, synopsis, genres, type_, episodes = get_anime_details_cached(anime_id) if anime_id else ("", "", "-", "-", "?")
-            st.image(image_url if image_url else "https://via.placeholder.com/200x300?text=No+Image", caption=rec_title, use_container_width=True)
+            tampilkan_gambar_anime(image_url, rec_title)
             st.markdown(f"*Genre:* {genres}")
             st.markdown(f"🎮 Tipe: `{type_}`")
             st.markdown(f"📺 Total Episode: `{episodes}`")
@@ -212,6 +226,6 @@ if st.session_state.history:
         with cols[i]:
             anime_id = anime_id_map.get(title)
             image_url, _, _, type_, episodes = get_anime_details_cached(anime_id) if anime_id else ("", "", "-", "-", "?")
-            st.image(image_url if image_url else "https://via.placeholder.com/200x300?text=No+Image", caption=title, use_container_width=True)
+            tampilkan_gambar_anime(image_url, title)
             st.markdown(f"🎮 Tipe: `{type_}`")
             st.markdown(f"📺 Total Episode: `{episodes}`")
