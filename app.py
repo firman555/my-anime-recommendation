@@ -83,10 +83,14 @@ def get_anime_details_cached(anime_id):
             episodes = data.get("episodes", "?")
             aired_from = data.get("aired", {}).get("from", None)
             year = "-"
+            aired_from = data.get("aired", {}).get("from", None)
+            year = "-"
             if aired_from:
-                match = re.match(r"(\\d{4})", aired_from)
-                if match:
-                    year = match.group(1)
+                try:
+                    year = pd.to_datetime(aired_from).year
+                except:
+                    pass
+
             return image, synopsis_id, genres, type_, episodes, year
     except Exception as e:
         print(f"[ERROR] ID {anime_id}: {e}")
