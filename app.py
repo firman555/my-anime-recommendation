@@ -136,6 +136,10 @@ for i, row in enumerate(top5_df.itertuples()):
         st.markdown(f"🎮 **Tipe:** `{type_}`")
         st.markdown(f"📺 **Total Episode:** `{episodes}`")
         st.markdown(f"🗓️ **Tahun Rilis:** `{year}`")
+        
+# ================================
+# REKOMENDASI BERDASARKAN GENRE
+# ================================
 
 st.markdown("## 🎬 Rekomendasi Berdasarkan Genre")
 selected_genre = st.selectbox("Pilih genre favoritmu:", AVAILABLE_GENRES)
@@ -163,13 +167,15 @@ if st.button("🌟 Tampilkan Anime Genre Ini"):
             col = col_rows[row][i % 5]
             with col:
                 name = anime[anime['anime_id'] == anime_id]['name'].values[0]
-                image_url, _, _, type_, episodes, year = get_anime_details_cached(anime_id)
+                image_url, synopsis, _, type_, episodes, year = get_anime_details_cached(anime_id)
                 tampilkan_gambar_anime(image_url, name)
                 st.markdown(f"⭐ Rating: `{rating:.2f}`")
                 st.markdown(f"👥 Jumlah Rating: `{num_votes}`")
                 st.markdown(f"🎮 Tipe: `{type_}`")
                 st.markdown(f"📺 Total Episode: `{episodes}`")
                 st.markdown(f"🗓️ Tahun Rilis: `{year}`")
+                with st.expander("📓 Lihat Sinopsis"):
+                    st.markdown(synopsis)
     else:
         st.info("Tidak ada anime ditemukan untuk genre ini.")
 
