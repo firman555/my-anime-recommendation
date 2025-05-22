@@ -155,6 +155,29 @@ if search_query:
     else:
         st.warning("Tidak ditemukan anime yang cocok. Coba ketik sebagian nama atau periksa ejaan.")
 
+# ANIME TERBARU
+
+st.subheader("🆕 Anime Terbaru (Season Now)")
+
+latest = get_latest_anime()
+
+if latest:
+    col_rows = [st.columns(5), st.columns(5)]
+    for i, anime in enumerate(latest):
+        row = 0 if i < 5 else 1
+        col = col_rows[row][i % 5]
+        with col:
+            tampilkan_gambar_anime(anime["image"], anime["title"])
+            st.markdown(f"🎭 Genre: {anime['genres']}")
+            st.markdown(f"🎮 Tipe: `{anime['type']}`")
+            st.markdown(f"📺 Episode: `{anime['episodes']}`")
+            st.markdown(f"🗓️ Tahun Rilis: `{anime['year']}`")
+            with st.expander("📓 Lihat Sinopsis"):
+                st.markdown(anime["synopsis"])
+else:
+    st.info("Tidak dapat memuat anime terbaru.")
+
+
 # LEADERBOARD TOP 5
 
 st.subheader("🏆 Top 5 Anime Berdasarkan Rating")
