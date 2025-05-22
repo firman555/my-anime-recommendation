@@ -57,7 +57,6 @@ def load_data():
     data = ratings.merge(anime, on="anime_id")
     return anime, data
 
-
 @st.cache_data
 def prepare_matrix(data, num_users=5500, num_anime=5000):
     top_users = data['user_id'].value_counts().head(num_users).index
@@ -163,42 +162,23 @@ st.subheader("🆕 Anime Terbaru (Season Now)")
 latest = get_latest_anime()
 if latest:
     col_rows = [st.columns(5), st.columns(5)]
-    for i, anime in enumerate(latest):
+    for i, anime_item in enumerate(latest):
         row = 0 if i < 5 else 1
         col = col_rows[row][i % 5]
         with col:
-            tampilkan_gambar_anime(anime["image"], anime["title"])
-            st.markdown(f"🎭 Genre: {anime['genres']}")
-            st.markdown(f"🎮 Tipe: `{anime['type']}`")
-            st.markdown(f"📺 Episode: `{anime['episodes']}`")
-            st.markdown(f"🗓️ Tahun Rilis: `{anime['year']}`")
+            tampilkan_gambar_anime(anime_item["image"], anime_item["title"])
+            st.markdown(f"🎭 Genre: {anime_item['genres']}")
+            st.markdown(f"🎮 Tipe: `{anime_item['type']}`")
+            st.markdown(f"📺 Episode: `{anime_item['episodes']}`")
+            st.markdown(f"🗓️ Tahun Rilis: `{anime_item['year']}`")
             with st.expander("📓 Lihat Sinopsis"):
-                st.markdown(anime["synopsis"])
+                st.markdown(anime_item["synopsis"])
 else:
     st.info("Tidak dapat memuat anime terbaru.")
 
-
-
-# LEADERBOARD TOP 5
-
-st.subheader("🏆 Top 5 Anime Berdasarkan Rating")
-top5_df = get_top_5_anime(data)
-cols = st.columns(5)
-
-for i, row in enumerate(top5_df.itertuples()):
-    with cols[i]:
-        anime_id = anime_id_map.get(row.name)
-        image_url, _, _, type_, episodes, year = get_anime_details_cached(anime_id) if anime_id else ("", "", "-", "-", "?", "-")
-        tampilkan_gambar_anime(image_url, row.name)
-        st.markdown(f"⭐ **Rating:** `{row.avg_rating:.2f}`")
-        st.markdown(f"👥 **Jumlah Rating:** `{row.num_ratings}`")
-        st.markdown(f"🎮 **Tipe:** `{type_}`")
-        st.markdown(f"📺 **Total Episode:** `{episodes}`")
-        st.markdown(f"🗓️ **Tahun Rilis:** `{year}`")
-        
-
+# ================================
 # REKOMENDASI BERDASARKAN GENRE
-
+# ================================
 st.markdown("## 🎬 Rekomendasi Berdasarkan Genre")
 selected_genre = st.selectbox("Pilih genre favoritmu:", AVAILABLE_GENRES)
 
@@ -224,8 +204,13 @@ if st.button("🌟 Tampilkan Anime Genre Ini"):
             row = 0 if i < 5 else 1
             col = col_rows[row][i % 5]
             with col:
-                name_row = anime[anime['anime_id'] == anime_id]
-                name = name_row['name'].values[0] if not name_row.empty else "Judul Tidak Diketahui"
+                anime_id_column = next((col for col in anime.columns if col.strip().lower() == 'anime_id'), None)
+                name_column = next((col for col in anime.columns if col.strip().lower() == 'name'), None)
+                if anime_id_column and name_column:
+                    name_row = anime[anime[anime_id_column] == anime_id]
+                    name = name_row[name_column].values[0] if not name_row.empty else "Judul Tidak Diketahui"
+                else:
+                    name = "Judul Tidak Diketahui"
                 image_url, synopsis, _, type_, episodes, year = get_anime_details_cached(anime_id)
                 tampilkan_gambar_anime(image_url, name)
                 st.markdown(f"⭐ Rating: `{rating:.2f}`")
@@ -235,6 +220,7 @@ if st.button("🌟 Tampilkan Anime Genre Ini"):
                 st.markdown(f"🗓️ Tahun Rilis: `{year}`")
                 with st.expander("📓 Lihat Sinopsis"):
                     st.markdown(synopsis)
+
     else:
         st.info("Tidak ada anime ditemukan untuk genre ini.")
 
