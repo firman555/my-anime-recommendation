@@ -1,5 +1,3 @@
-
-
 import streamlit as st
 import pandas as pd
 import os
@@ -13,6 +11,23 @@ import time
 from rapidfuzz import process
 
 st.set_page_config(page_title="🍜 Sistem Rekomendasi Anime", layout="wide")
+mode = st.toggle("🌙 Mode Gelap / Terang", value=True)
+
+if mode:
+    st.markdown("""
+        <style>
+        body { background-color: #0E1117; color: white; }
+        .stApp { background-color: #0E1117; }
+        </style>
+        """, unsafe_allow_html=True)
+else:
+    st.markdown("""
+        <style>
+        body { background-color: #FFFFFF; color: black; }
+        .stApp { background-color: #FFFFFF; }
+        </style>
+        """, unsafe_allow_html=True)
+
 st.markdown("<h1 style='text-align: center;'>🍜 Sistem Rekomendasi Anime</h1>", unsafe_allow_html=True)
 st.caption("Powered by K-Nearest Neighbors, Jikan API & Google Drive")
 
@@ -84,8 +99,6 @@ def get_anime_details_cached(anime_id):
             synopsis_id = GoogleTranslator(source='auto', target='id').translate(synopsis_en)
             type_ = data.get("type", "-")
             episodes = data.get("episodes", "?")
-            aired_from = data.get("aired", {}).get("from", None)
-            year = "-"
             aired_from = data.get("aired", {}).get("from", None)
             year = "-"
             if aired_from:
