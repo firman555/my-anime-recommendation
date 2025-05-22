@@ -13,6 +13,7 @@ import time
 from rapidfuzz import process
 
 st.set_page_config(page_title="🍜 Sistem Rekomendasi Anime", layout="wide")
+
 st.markdown("<h1 style='text-align: center;'>🍜 Sistem Rekomendasi Anime</h1>", unsafe_allow_html=True)
 st.caption("Powered by K-Nearest Neighbors, Jikan API & Google Drive")
 
@@ -86,14 +87,11 @@ def get_anime_details_cached(anime_id):
             episodes = data.get("episodes", "?")
             aired_from = data.get("aired", {}).get("from", None)
             year = "-"
-            aired_from = data.get("aired", {}).get("from", None)
-            year = "-"
             if aired_from:
                 try:
                     year = pd.to_datetime(aired_from).year
                 except:
                     pass
-
             return image, synopsis_id, genres, type_, episodes, year
     except Exception as e:
         print(f"[ERROR] ID {anime_id}: {e}")
@@ -119,48 +117,43 @@ def get_top_5_anime(data):
     top_anime = grouped[grouped["num_ratings"] > 10].sort_values(by="avg_rating", ascending=False).head(5)
     return top_anime
 
+@st.cache_data(show_spinner=False)
+def get_latest_anime(n=10):
+    try:
+        response = requests.get("https://api.jikan.moe/v4/seasons/now", timeout=10)
+        if response.status_code == 200:
+            results = []
+            for anime in response.json()["data"][:n]:
+                anime_id = anime["mal_id"]
+                title = anime["title"]
+                image = anime["images"]["jpg"].get("image_url", "")
+                synopsis_en = anime.get("synopsis", "Sinopsis tidak tersedia.")
+                synopsis_id = GoogleTranslator(source='auto', target='id').translate(synopsis_en)
+                genres = ", ".join([g["name"] for g in anime.get("genres", [])])
+                type_ = anime.get("type", "-")
+                episodes = anime.get("episodes", "?")
+                year = anime.get("year", "-")
+                results.append({
+                    "id": anime_id, "title": title, "image": image,
+                    "synopsis": synopsis_id, "genres": genres,
+                    "type": type_, "episodes": episodes, "year": year
+                })
+            return results
+    except Exception as e:
+        print(f"[ERROR latest] {e}")
+    return []
+
 with st.spinner("🔄 Memuat data..."):
     anime, data = load_data()
     matrix = prepare_matrix(data)
     model = train_model(matrix)
     anime_id_map = dict(zip(anime['name'], anime['anime_id']))
 
-# PENCARIAN MANUAL
-
-st.markdown("## 🔍 Cari Anime Manual")
-
-search_query = st.text_input("Ketik nama anime:")
-
-if search_query:
-    matches = process.extract(search_query, anime["name"].tolist(), limit=10, score_cutoff=60)
-    matching_titles = [match[0] for match in matches]
-
-    if matching_titles:
-        selected_title = st.selectbox("Pilih anime yang dimaksud:", matching_titles)
-        anime_id = anime_id_map.get(selected_title)
-        if anime_id:
-            image_url, synopsis, genres, type_, episodes, year = get_anime_details_cached(anime_id)
-            st.markdown(f"""
-                <div style='text-align: center;'>
-                    <img src='{image_url if image_url else "https://via.placeholder.com/200x300?text=No+Image"}'
-                         style='height: 300px; object-fit: cover; border-radius: 10px;'>
-                    <p style='margin-top: 10px; font-size: 18px;'><strong>Tipe:</strong> {type_}</p>
-                    <p style='font-size: 18px;'><strong>📺 Total Episode:</strong> {episodes}</p>
-                    <p style='font-size: 18px;'><strong>🗓️ Tahun Rilis:</strong> {year}</p>
-                    <p style='font-size: 18px;'><strong>🎭 Genre:</strong> {genres}</p>
-                </div>
-            """, unsafe_allow_html=True)
-            with st.expander("📓 Sinopsis"):
-                st.markdown(synopsis)
-    else:
-        st.warning("Tidak ditemukan anime yang cocok. Coba ketik sebagian nama atau periksa ejaan.")
-
+# ================================
 # ANIME TERBARU
-
+# ================================
 st.subheader("🆕 Anime Terbaru (Season Now)")
-
 latest = get_latest_anime()
-
 if latest:
     col_rows = [st.columns(5), st.columns(5)]
     for i, anime in enumerate(latest):
@@ -176,6 +169,7 @@ if latest:
                 st.markdown(anime["synopsis"])
 else:
     st.info("Tidak dapat memuat anime terbaru.")
+
 
 
 # LEADERBOARD TOP 5
