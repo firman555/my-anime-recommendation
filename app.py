@@ -1,4 +1,5 @@
 
+
 import streamlit as st
 import pandas as pd
 import os
@@ -154,9 +155,8 @@ if search_query:
     else:
         st.warning("Tidak ditemukan anime yang cocok. Coba ketik sebagian nama atau periksa ejaan.")
 
-# ================================
-# LEADERBOARD - TOP 5 ANIME
-# ================================
+# LEADERBOARD TOP 5
+
 st.subheader("🏆 Top 5 Anime Berdasarkan Rating")
 top5_df = get_top_5_anime(data)
 cols = st.columns(5)
@@ -170,46 +170,10 @@ for i, row in enumerate(top5_df.itertuples()):
         st.markdown(f"👥 **Jumlah Rating:** `{row.num_ratings}`")
         st.markdown(f"🎮 **Tipe:** `{type_}`")
         st.markdown(f"📺 **Total Episode:** `{episodes}`")
-        st.markdown(f"🗓️ Tahun Rilis:** `{year}`")
-
-# ================================
-# ANIME TERBARU MUSIM INI
-# ================================
-st.markdown("## 🆕 Anime Terbaru Musim Ini")
-
-@st.cache_data(show_spinner=False)
-def get_anime_terbaru():
-    try:
-        response = requests.get("https://api.jikan.moe/v4/seasons/now", timeout=10)
-        if response.status_code == 200:
-            return response.json()["data"][:10]  # ambil 10 teratas
-    except Exception as e:
-        print(f"[ERROR] Ambil anime terbaru: {e}")
-    return []
-
-terbaru_list = get_anime_terbaru()
-
-cols = st.columns(5)
-for i, anime in enumerate(terbaru_list):
-    with cols[i % 5]:
-        name = anime.get("title", "Tanpa Judul")
-        image_url = anime["images"]["jpg"].get("image_url", "")
-        type_ = anime.get("type", "-")
-        episodes = anime.get("episodes", "?")
-        year = anime.get("year", "-")
-        genres = ", ".join([g["name"] for g in anime.get("genres", [])])
-        st.markdown(f"""
-            <div style='text-align: center;'>
-                <img src='{image_url}' style='height: 300px; object-fit: cover; border-radius: 10px;'>
-                <p style='margin-top: 6px; font-weight: bold;'>{name}</p>
-                <p>🎮 {type_} | 📺 {episodes} eps<br>🗓️ {year}<br>🎭 {genres}</p>
-            </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"🗓️ **Tahun Rilis:** `{year}`")
         
 
-# ================================
 # REKOMENDASI BERDASARKAN GENRE
-# ================================
 
 st.markdown("## 🎬 Rekomendasi Berdasarkan Genre")
 selected_genre = st.selectbox("Pilih genre favoritmu:", AVAILABLE_GENRES)
@@ -236,10 +200,7 @@ if st.button("🌟 Tampilkan Anime Genre Ini"):
             row = 0 if i < 5 else 1
             col = col_rows[row][i % 5]
             with col:
-                try:
-                name = anime.loc[anime["anime_id"] == int(anime_id), "name"].values[0]
-                except (IndexError, KeyError, ValueError):
-                name = "Judul Tidak Diketahui"
+                name = anime[anime['anime_id'] == anime_id]['name'].values[0]
                 image_url, synopsis, _, type_, episodes, year = get_anime_details_cached(anime_id)
                 tampilkan_gambar_anime(image_url, name)
                 st.markdown(f"⭐ Rating: `{rating:.2f}`")
@@ -252,8 +213,6 @@ if st.button("🌟 Tampilkan Anime Genre Ini"):
     else:
         st.info("Tidak ada anime ditemukan untuk genre ini.")
 
-
-# REKOMENDASI ANIME
 st.markdown("## 🎮 Rekomendasi Berdasarkan Anime Favorit Kamu")
 anime_list = list(matrix.index)
 selected_anime = st.selectbox("Pilih anime yang kamu suka:", anime_list)
