@@ -45,11 +45,18 @@ def download_and_load_csv(file_id, filename):
 def load_data():
     anime_file_id = "1rKuccpP1bsiRxozgHZAaruTeDUidRwcz"
     rating_file_id = "1bSK2RJN23du0LR1K5HdCGsp8bWckVWQn"
-    anime = download_and_load_csv(anime_file_id, "anime.csv")[["anime_id", "name"]].dropna().drop_duplicates(subset="name")
+    
+    anime = download_and_load_csv(anime_file_id, "anime.csv")
+    anime.columns = anime.columns.str.strip().str.lower()
+    anime = anime[["anime_id", "name"]].dropna().drop_duplicates(subset="name")
+
     ratings = download_and_load_csv(rating_file_id, "rating.csv")
+    ratings.columns = ratings.columns.str.strip().str.lower()
     ratings = ratings[ratings["rating"] > 0]
+
     data = ratings.merge(anime, on="anime_id")
     return anime, data
+
 
 @st.cache_data
 def prepare_matrix(data, num_users=5500, num_anime=5000):
