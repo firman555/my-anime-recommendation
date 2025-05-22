@@ -217,7 +217,8 @@ if st.button("🌟 Tampilkan Anime Genre Ini"):
             row = 0 if i < 5 else 1
             col = col_rows[row][i % 5]
             with col:
-                name = anime[anime['anime_id'] == anime_id]['name'].values[0]
+                name_row = anime[anime['anime_id'] == anime_id]
+                name = name_row['name'].values[0] if not name_row.empty else "Judul Tidak Diketahui"
                 image_url, synopsis, _, type_, episodes, year = get_anime_details_cached(anime_id)
                 tampilkan_gambar_anime(image_url, name)
                 st.markdown(f"⭐ Rating: `{rating:.2f}`")
