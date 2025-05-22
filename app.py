@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import os
@@ -8,6 +9,7 @@ import requests
 from deep_translator import GoogleTranslator
 import re
 import time
+from rapidfuzz import process
 
 st.set_page_config(page_title="🍜 Sistem Rekomendasi Anime", layout="wide")
 st.markdown("<h1 style='text-align: center;'>🍜 Sistem Rekomendasi Anime</h1>", unsafe_allow_html=True)
@@ -48,7 +50,7 @@ def load_data():
     return anime, data
 
 @st.cache_data
-def prepare_matrix(data, num_users=1500, num_anime=2000):
+def prepare_matrix(data, num_users=5500, num_anime=5000):
     top_users = data['user_id'].value_counts().head(num_users).index
     top_anime = data['name'].value_counts().head(num_anime).index
     filtered = data[data['user_id'].isin(top_users) & data['name'].isin(top_anime)]
@@ -122,6 +124,38 @@ with st.spinner("🔄 Memuat data..."):
     model = train_model(matrix)
     anime_id_map = dict(zip(anime['name'], anime['anime_id']))
 
+# PENCARIAN MANUAL
+
+st.markdown("## 🔍 Cari Anime Manual")
+
+search_query = st.text_input("Ketik nama anime:")
+
+if search_query:
+    matches = process.extract(search_query, anime["name"].tolist(), limit=10, score_cutoff=60)
+    matching_titles = [match[0] for match in matches]
+
+    if matching_titles:
+        selected_title = st.selectbox("Pilih anime yang dimaksud:", matching_titles)
+        anime_id = anime_id_map.get(selected_title)
+        if anime_id:
+            image_url, synopsis, genres, type_, episodes, year = get_anime_details_cached(anime_id)
+            st.markdown(f"""
+                <div style='text-align: center;'>
+                    <img src='{image_url if image_url else "https://via.placeholder.com/200x300?text=No+Image"}'
+                         style='height: 300px; object-fit: cover; border-radius: 10px;'>
+                    <p style='margin-top: 10px; font-size: 18px;'><strong>Tipe:</strong> {type_}</p>
+                    <p style='font-size: 18px;'><strong>📺 Total Episode:</strong> {episodes}</p>
+                    <p style='font-size: 18px;'><strong>🗓️ Tahun Rilis:</strong> {year}</p>
+                    <p style='font-size: 18px;'><strong>🎭 Genre:</strong> {genres}</p>
+                </div>
+            """, unsafe_allow_html=True)
+            with st.expander("📓 Sinopsis"):
+                st.markdown(synopsis)
+    else:
+        st.warning("Tidak ditemukan anime yang cocok. Coba ketik sebagian nama atau periksa ejaan.")
+
+# LEADERBOARD TOP 5
+
 st.subheader("🏆 Top 5 Anime Berdasarkan Rating")
 top5_df = get_top_5_anime(data)
 cols = st.columns(5)
@@ -137,9 +171,8 @@ for i, row in enumerate(top5_df.itertuples()):
         st.markdown(f"📺 **Total Episode:** `{episodes}`")
         st.markdown(f"🗓️ **Tahun Rilis:** `{year}`")
         
-# ================================
+
 # REKOMENDASI BERDASARKAN GENRE
-# ================================
 
 st.markdown("## 🎬 Rekomendasi Berdasarkan Genre")
 selected_genre = st.selectbox("Pilih genre favoritmu:", AVAILABLE_GENRES)
@@ -179,7 +212,7 @@ if st.button("🌟 Tampilkan Anime Genre Ini"):
     else:
         st.info("Tidak ada anime ditemukan untuk genre ini.")
 
-st.markdown("## 🎮 Pilih Anime Favorit Kamu")
+st.markdown("## 🎮 Rekomendasi Berdasarkan Anime Favorit Kamu")
 anime_list = list(matrix.index)
 selected_anime = st.selectbox("Pilih anime yang kamu suka:", anime_list)
 
