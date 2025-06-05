@@ -330,3 +330,26 @@ else:
     st.info("Tidak dapat memuat anime trending global.")
 
 
+
+
+
+
+st.markdown("## 🎲 Coba Rekomendasi Acak Berkualitas Tinggi!")
+
+if st.button("🤯 Beri Saya Anime Acak Terbaik!"):
+    with st.spinner("Mencari anime acak berkualitas tinggi..."):
+        random_anime = get_random_top_anime()
+        if random_anime:
+            st.subheader(f"🎉 Anime Pilihan Randommu: {random_anime['title']}")
+            col1, col2 = st.columns([1, 2]) # Bagi ruang untuk gambar dan detail
+            with col1:
+                tampilkan_gambar_anime(random_anime["image"], random_anime["title"])
+            with col2:
+                st.markdown(f"🎭 Genre: {random_anime['genres']}")
+                st.markdown(f"🎮 Tipe: `{random_anime['type']}`")
+                st.markdown(f"📺 Episode: `{random_anime['episodes']}`")
+                st.markdown(f"🗓️ Tahun Rilis: `{random_anime['year']}`")
+                with st.expander("📓 Lihat Sinopsis"):
+                    st.markdown(random_anime["synopsis"])
+        else:
+            st.error("Gagal mendapatkan rekomendasi anime acak. Coba lagi!")
