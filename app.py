@@ -332,35 +332,54 @@ else:
 
 
 
+# ================================
+# 🎲 Rekomendasi Acak Berkualitas
+# ================================
 st.markdown("## 🎲 Rekomendasi Acak Berkualitas (Surprise Me!)")
 
 if st.button("🎉 Beri Saya Rekomendasi!"):
     st.subheader("🎁 Anime Rekomendasi Acak untuk Kamu:")
-    
-    # Filter anime dengan rating bagus
+
+    # Hitung statistik rating
     anime_stats = data.groupby("anime_id").agg(
         avg_rating=("rating", "mean"),
         num_ratings=("rating", "count")
     ).reset_index()
+
+    # Filter hanya anime dengan rating bagus dan jumlah rating mencukupi
     good_anime = anime_stats[(anime_stats["avg_rating"] >= 7.5) & (anime_stats["num_ratings"] > 30)]
-    
-    # Pilih acak
-    sampled = good_anime.sample(n=5, random_state=int(time.time()))
-    
-    col_rows = [st.columns(5)]
-    for i, row in enumerate(sampled.itertuples()):
-        col = col_rows[0][i % 5]
-        with col:
-            name_row = anime[anime["anime_id"] == row.anime_id]
-            name = name_row["name"].values[0] if not name_row.empty else "Judul Tidak Diketahui"
-            image_url, synopsis, genres, type_, episodes, year = get_anime_details_cached(row.anime_id)
-            
-            tampilkan_gambar_anime(image_url, name)
-            st.markdown(f"⭐ Rating: `{row.avg_rating:.2f}`")
-            st.markdown(f"👥 Jumlah Rating: `{row.num_ratings}`")
-            st.markdown(f"🎮 Tipe: `{type_}`")
-            st.markdown(f"📺 Episode: `{episodes}`")
-            st.markdown(f"🗓️ Tahun Rilis: `{year}`")
-            st.markdown(f"🎭 Genre: {genres}")
-            with st.expander("📓 Lihat Sinopsis"):
-                st.markdown(synopsis)
+
+    if good_anime.empty:
+        st.warning("Tidak ada anime berkualitas tinggi yang ditemukan.")
+    else:
+        # Acak 5 anime dari hasil filter
+        sampled = good_anime.sample(n=5, random_state=int(time.time()))
+
+        col_rows = [st.columns(5)]
+        for i, row in enumerate(sampled.itertuples()):
+            col = col_rows[0][i % 5]
+            with col:
+                # Deteksi nama kolom secara dinamis agar aman
+                anime_id_column = next((col for col in anime.columns if col.strip().lower() == 'anime_id'), None)
+                name_column = next((col for col in anime.columns if col.strip().lower() == 'name'), None)
+
+                if anime_id_column and name_column:
+                    name_row = anime[anime[anime_id_column] == row.anime_id]
+                    name = name_row[name_column].values[0] if not name_row.empty else "Judul Tidak Diketahui"
+                else:
+                    name = "Judul Tidak Diketahui"
+
+                # Ambil detail
+                image_url, synopsis, genres, type_, episodes, year = get_anime_details_cached(row.anime_id)
+
+                # Tampilkan
+                tampilkan_gambar_anime(image_url, name)
+                st.markdown(f"⭐ Rating: `{row.avg_rating:.2f}`")
+                st.markdown(f"👥 Jumlah Rating: `{row.num_ratings}`")
+                st.markdown(f"🎮 Tipe: `{type_}`")
+                st.markdown(f"📺 Episode: `{episodes}`")
+                st.markdown(f"🗓️ Tahun Rilis: `{year}`")
+                st.markdown(f"🎭 Genre: {genres}")
+                with st.expander("📓 Lihat Sinopsis"):
+                    st.markdown(synopsis)
+
