@@ -1,4 +1,3 @@
-import random # <--- Make sure 'random' is imported at the top of your file
 import streamlit as st
 import pandas as pd
 import os
@@ -9,6 +8,7 @@ import requests
 from deep_translator import GoogleTranslator
 import re
 import time
+import random # Make sure this is imported at the top!
 from rapidfuzz import process
 
 st.set_page_config(page_title="🎌 Rekomendasi Anime 🎌", layout="wide")
@@ -128,16 +128,16 @@ def get_latest_anime(n=10):
         response = requests.get("https://api.jikan.moe/v4/seasons/now", timeout=10)
         if response.status_code == 200:
             results = []
-            for anime in response.json()["data"][:n]:
-                anime_id = anime["mal_id"]
-                title = anime["title"]
-                image = anime["images"]["jpg"].get("image_url", "")
-                synopsis_en = anime.get("synopsis", "Sinopsis tidak tersedia.")
+            for anime_item in response.json()["data"][:n]: # Renamed `anime` to `anime_item` to avoid conflict with global `anime` variable
+                anime_id = anime_item["mal_id"]
+                title = anime_item["title"]
+                image = anime_item["images"]["jpg"].get("image_url", "")
+                synopsis_en = anime_item.get("synopsis", "Sinopsis tidak tersedia.")
                 synopsis_id = GoogleTranslator(source='auto', target='id').translate(synopsis_en)
-                genres = ", ".join([g["name"] for g in anime.get("genres", [])])
-                type_ = anime.get("type", "-")
-                episodes = anime.get("episodes", "?")
-                year = anime.get("year", "-")
+                genres = ", ".join([g["name"] for g in anime_item.get("genres", [])])
+                type_ = anime_item.get("type", "-")
+                episodes = anime_item.get("episodes", "?")
+                year = anime_item.get("year", "-")
                 results.append({
                     "id": anime_id, "title": title, "image": image,
                     "synopsis": synopsis_id, "genres": genres,
@@ -184,12 +184,15 @@ def get_random_top_anime():
             return None
     except requests.exceptions.RequestException as e:
         print(f"[ERROR random top anime network/API] {e}")
+        st.error(f"Kesalahan jaringan atau API saat mengambil anime acak: {e}. Silakan coba lagi nanti.")
         return None
     except KeyError:
         print(f"[ERROR random top anime data structure] 'data' key not found in API response or unexpected structure.")
+        st.error("Terjadi masalah dengan struktur data dari API. Silakan coba lagi nanti.")
         return None
     except Exception as e:
         print(f"[ERROR random top anime general] {e}")
+        st.error(f"Terjadi kesalahan tak terduga: {e}. Silakan coba lagi nanti.")
         return None
 
 
@@ -325,16 +328,16 @@ def get_trending_anime(n=10):
         response = requests.get("https://api.jikan.moe/v4/top/anime", timeout=10)
         if response.status_code == 200:
             trending = []
-            for anime in response.json()["data"][:n]:
-                anime_id = anime["mal_id"]
-                title = anime["title"]
-                image = anime["images"]["jpg"].get("image_url", "")
-                synopsis_en = anime.get("synopsis", "Sinopsis tidak tersedia.")
+            for anime_item in response.json()["data"][:n]: # Renamed `anime` to `anime_item`
+                anime_id = anime_item["mal_id"]
+                title = anime_item["title"]
+                image = anime_item["images"]["jpg"].get("image_url", "")
+                synopsis_en = anime_item.get("synopsis", "Sinopsis tidak tersedia.")
                 synopsis_id = GoogleTranslator(source='auto', target='id').translate(synopsis_en)
-                genres = ", ".join([g["name"] for g in anime.get("genres", [])])
-                type_ = anime.get("type", "-")
-                episodes = anime.get("episodes", "?")
-                aired_from = anime.get("aired", {}).get("from", None)
+                genres = ", ".join([g["name"] for g in anime_item.get("genres", [])])
+                type_ = anime_item.get("type", "-")
+                episodes = anime_item.get("episodes", "?")
+                aired_from = anime_item.get("aired", {}).get("from", None)
                 try:
                     year = pd.to_datetime(aired_from).year if aired_from else "-"
                 except:
@@ -358,7 +361,7 @@ st.markdown("## 🌍 Anime Trending Global (Peringkat Teratas MyAnimeList)")
 trending = get_trending_anime(10)
 if trending:
     col_rows = [st.columns(5), st.columns(5)]
-    for i, anime_item in enumerate(trending):
+    for i, anime_item in enumerate(trending): # Renamed `anime` to `anime_item`
         row = 0 if i < 5 else 1
         col = col_rows[row][i % 5]
         with col:
@@ -372,7 +375,9 @@ if trending:
 else:
     st.info("Tidak dapat memuat anime trending global.")
 
-# =akan ditambahkan di sini================
+# ================================
+# REKOMENDASI ACAK BERKUALITAS TINGGI
+# ================================
 st.markdown("## 🎲 Coba Rekomendasi Acak Berkualitas Tinggi!")
 
 if st.button("🤯 Beri Saya Anime Acak Terbaik!"):
@@ -391,4 +396,6 @@ if st.button("🤯 Beri Saya Anime Acak Terbaik!"):
                 with st.expander("📓 Lihat Sinopsis"):
                     st.markdown(random_anime["synopsis"])
         else:
-            st.error("Gagal mendapatkan rekomendasi anime acak. Coba lagi!")
+            # If get_random_top_anime already shows an error message,
+            # this general one might be redundant, but it ensures user feedback.
+            st.error("Gagal mendapatkan rekomendasi anime acak. Silakan coba lagi!")
