@@ -360,8 +360,9 @@ if st.button("🎉 Beri Saya Rekomendasi!"):
             col = col_rows[0][i % 5]
             with col:
                 # Deteksi nama kolom secara dinamis agar aman dari error
-                anime_id_column = next((col for col in anime.columns if isinstance(col, str) and col.strip().lower() == 'anime_id'), None)
-                name_column = next((col for col in anime.columns if isinstance(col, str) and col.strip().lower() == 'name'), None)
+                anime_id_column = next((c for c in anime.columns if isinstance(c, str) and c.strip().lower() == 'anime_id'), None)
+                name_column = next((c for c in anime.columns if isinstance(c, str) and c.strip().lower() == 'name'), None)
+
 
                 if anime_id_column and name_column:
                     name_row = anime[anime[anime_id_column] == row.anime_id]
