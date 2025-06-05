@@ -333,9 +333,9 @@ else:
 
 
 # ================================
-# 🎲 Rekomendasi Acak Berkualitas
+# 🌺 Rekomendasi Acak Berkualitas (Surprise Me!)
 # ================================
-st.markdown("## 🎲 Rekomendasi Acak Berkualitas (Surprise Me!)")
+st.markdown("## 🌺 Rekomendasi Acak Berkualitas (Surprise Me!)")
 
 if st.button("🎉 Beri Saya Rekomendasi!"):
     st.subheader("🎁 Anime Rekomendasi Acak untuk Kamu:")
@@ -359,16 +359,9 @@ if st.button("🎉 Beri Saya Rekomendasi!"):
         for i, row in enumerate(sampled.itertuples()):
             col = col_rows[0][i % 5]
             with col:
-                # Deteksi nama kolom secara dinamis agar aman
+                # Deteksi nama kolom secara dinamis agar aman dari error
                 anime_id_column = next((col for col in anime.columns if isinstance(col, str) and col.strip().lower() == 'anime_id'), None)
                 name_column = next((col for col in anime.columns if isinstance(col, str) and col.strip().lower() == 'name'), None)
-
-if anime_id_column and name_column:
-    name_row = anime[anime[anime_id_column] == row.anime_id]
-    name = name_row[name_column].values[0] if not name_row.empty else "Judul Tidak Diketahui"
-else:
-    name = "Judul Tidak Diketahui"
-
 
                 if anime_id_column and name_column:
                     name_row = anime[anime[anime_id_column] == row.anime_id]
@@ -389,4 +382,5 @@ else:
                 st.markdown(f"🎭 Genre: {genres}")
                 with st.expander("📓 Lihat Sinopsis"):
                     st.markdown(synopsis)
+
 
