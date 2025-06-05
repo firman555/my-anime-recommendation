@@ -1,5 +1,6 @@
 
 
+
 import streamlit as st
 import pandas as pd
 import os
@@ -12,9 +13,9 @@ import re
 import time
 from rapidfuzz import process
 
-st.set_page_config(page_title="🍜 Rekomendasi Anime", layout="wide")
+st.set_page_config(page_title="🎌 Rekomendasi Anime 🎌", layout="wide")
 
-st.markdown("<h1 style='text-align: center;'>🍜 Rekomendasi Anime</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'>🎌 Rekomendasi Anime</h1>", unsafe_allow_html=True)
 st.caption("Powered by K-Nearest Neighbors, Jikan API & Google Drive")
 
 AVAILABLE_GENRES = [
@@ -155,6 +156,7 @@ with st.spinner("🔄 Memuat data..."):
     model = train_model(matrix)
     anime_id_map = dict(zip(anime['name'], anime['anime_id']))
 
+
 # ================================
 # ANIME TERBARU
 # ================================
@@ -224,7 +226,7 @@ if st.button("🌟 Tampilkan Anime Genre Ini"):
     else:
         st.info("Tidak ada anime ditemukan untuk genre ini.")
 
-st.markdown("## 🎮 Rekomendasi Berdasarkan Anime Favorit Kamu")
+st.markdown("## 🎏 Rekomendasi Berdasarkan Anime Favorit Kamu")
 anime_list = list(matrix.index)
 selected_anime = st.selectbox("Pilih anime yang kamu suka:", anime_list)
 
@@ -271,3 +273,58 @@ if st.session_state.history:
 
     if st.button("🧹 Hapus Riwayat"):
         st.session_state.history = []
+
+
+
+@st.cache_data(show_spinner=False)
+def get_trending_anime(n=10):
+    try:
+        response = requests.get("https://api.jikan.moe/v4/top/anime", timeout=10)
+        if response.status_code == 200:
+            trending = []
+            for anime in response.json()["data"][:n]:
+                anime_id = anime["mal_id"]
+                title = anime["title"]
+                image = anime["images"]["jpg"].get("image_url", "")
+                synopsis_en = anime.get("synopsis", "Sinopsis tidak tersedia.")
+                synopsis_id = GoogleTranslator(source='auto', target='id').translate(synopsis_en)
+                genres = ", ".join([g["name"] for g in anime.get("genres", [])])
+                type_ = anime.get("type", "-")
+                episodes = anime.get("episodes", "?")
+                aired_from = anime.get("aired", {}).get("from", None)
+                try:
+                    year = pd.to_datetime(aired_from).year if aired_from else "-"
+                except:
+                    year = "-"
+                trending.append({
+                    "id": anime_id, "title": title, "image": image,
+                    "synopsis": synopsis_id, "genres": genres,
+                    "type": type_, "episodes": episodes, "year": year
+                })
+            return trending
+    except Exception as e:
+        print(f"[ERROR trending global] {e}")
+    return []
+
+
+# ================================
+# ANIME TRENDING GLOBAL
+# ================================
+st.markdown("## 🌍 Anime Trending Global (Peringkat Teratas MyAnimeList)")
+
+trending = get_trending_anime(10)
+if trending:
+    col_rows = [st.columns(5), st.columns(5)]
+    for i, anime in enumerate(trending):
+        row = 0 if i < 5 else 1
+        col = col_rows[row][i % 5]
+        with col:
+            tampilkan_gambar_anime(anime["image"], anime["title"])
+            st.markdown(f"🎭 Genre: {anime['genres']}")
+            st.markdown(f"🎮 Tipe: `{anime['type']}`")
+            st.markdown(f"📺 Episode: `{anime['episodes']}`")
+            st.markdown(f"🗓️ Tahun Rilis: `{anime['year']}`")
+            with st.expander("📓 Lihat Sinopsis"):
+                st.markdown(anime["synopsis"])
+else:
+    st.info("Tidak dapat memuat anime trending global.")
