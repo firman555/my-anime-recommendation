@@ -1,3 +1,4 @@
+import random
 import streamlit as st
 import pandas as pd
 import os
@@ -8,7 +9,6 @@ import requests
 from deep_translator import GoogleTranslator
 import re
 import time
-import random # Make sure this is imported at the top!
 from rapidfuzz import process
 
 st.set_page_config(page_title="🎌 Rekomendasi Anime 🎌", layout="wide")
