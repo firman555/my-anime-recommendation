@@ -1,6 +1,4 @@
-
-
-
+import random # <--- Make sure 'random' is imported at the top of your file
 import streamlit as st
 import pandas as pd
 import os
@@ -15,7 +13,7 @@ from rapidfuzz import process
 
 st.set_page_config(page_title="🎌 Rekomendasi Anime 🎌", layout="wide")
 
-st.markdown("<h1 style='text-align: center;'>🎌 Rekomendasi Anime 🎌</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'>🎌 Rekomendasi Anime</h1>", unsafe_allow_html=True)
 st.caption("Powered by K-Nearest Neighbors, Jikan API & Google Drive")
 
 AVAILABLE_GENRES = [
@@ -149,6 +147,51 @@ def get_latest_anime(n=10):
     except Exception as e:
         print(f"[ERROR latest] {e}")
     return []
+
+# Fungsi baru untuk mendapatkan anime top secara acak
+@st.cache_data(show_spinner=False)
+def get_random_top_anime():
+    try:
+        # Ambil 100 anime teratas. Coba tingkatkan limit jika Anda ingin lebih banyak variasi.
+        response = requests.get("https://api.jikan.moe/v4/top/anime?limit=100", timeout=15) 
+        response.raise_for_status() # Akan memicu HTTPError untuk status kode 4xx/5xx
+
+        data = response.json()["data"]
+        if data: # Pastikan ada data sebelum mencoba memilih secara acak
+            random_anime = random.choice(data)
+            
+            anime_id = random_anime["mal_id"]
+            title = random_anime["title"]
+            image = random_anime["images"]["jpg"].get("image_url", "")
+            synopsis_en = random_anime.get("synopsis", "Sinopsis tidak tersedia.")
+            synopsis_id = GoogleTranslator(source='auto', target='id').translate(synopsis_en)
+            genres = ", ".join([g["name"] for g in random_anime.get("genres", [])])
+            type_ = random_anime.get("type", "-")
+            episodes = random_anime.get("episodes", "?")
+            aired_from = random_anime.get("aired", {}).get("from", None)
+            try:
+                year = pd.to_datetime(aired_from).year if aired_from else "-"
+            except:
+                year = "-"
+            
+            return {
+                "id": anime_id, "title": title, "image": image,
+                "synopsis": synopsis_id, "genres": genres,
+                "type": type_, "episodes": episodes, "year": year
+            }
+        else:
+            print("[WARNING] Jikan API returned empty data for top anime.")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"[ERROR random top anime network/API] {e}")
+        return None
+    except KeyError:
+        print(f"[ERROR random top anime data structure] 'data' key not found in API response or unexpected structure.")
+        return None
+    except Exception as e:
+        print(f"[ERROR random top anime general] {e}")
+        return None
+
 
 with st.spinner("🔄 Memuat data..."):
     anime, data = load_data()
@@ -315,25 +358,21 @@ st.markdown("## 🌍 Anime Trending Global (Peringkat Teratas MyAnimeList)")
 trending = get_trending_anime(10)
 if trending:
     col_rows = [st.columns(5), st.columns(5)]
-    for i, anime in enumerate(trending):
+    for i, anime_item in enumerate(trending):
         row = 0 if i < 5 else 1
         col = col_rows[row][i % 5]
         with col:
-            tampilkan_gambar_anime(anime["image"], anime["title"])
-            st.markdown(f"🎭 Genre: {anime['genres']}")
-            st.markdown(f"🎮 Tipe: `{anime['type']}`")
-            st.markdown(f"📺 Episode: `{anime['episodes']}`")
-            st.markdown(f"🗓️ Tahun Rilis: `{anime['year']}`")
+            tampilkan_gambar_anime(anime_item["image"], anime_item["title"])
+            st.markdown(f"🎭 Genre: {anime_item['genres']}")
+            st.markdown(f"🎮 Tipe: `{anime_item['type']}`")
+            st.markdown(f"📺 Episode: `{anime_item['episodes']}`")
+            st.markdown(f"🗓️ Tahun Rilis: `{anime_item['year']}`")
             with st.expander("📓 Lihat Sinopsis"):
-                st.markdown(anime["synopsis"])
+                st.markdown(anime_item["synopsis"])
 else:
     st.info("Tidak dapat memuat anime trending global.")
 
-
-
-
-
-
+# =akan ditambahkan di sini================
 st.markdown("## 🎲 Coba Rekomendasi Acak Berkualitas Tinggi!")
 
 if st.button("🤯 Beri Saya Anime Acak Terbaik!"):
